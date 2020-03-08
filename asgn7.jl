@@ -13,7 +13,7 @@ an ExprC is generally the input to evaluation, which may be one of the following
 abstract type ExprC end
 
 struct numC <: ExprC
-    n::Int64
+    n::Real
 end
 
 struct stringC <: ExprC
