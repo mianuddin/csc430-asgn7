@@ -1,5 +1,7 @@
 using Test
 
+# Full project implemented.
+
 #=
 an ExprC is generally the input to evaluation, which may be one of the following:
  - numC: a real number
@@ -13,7 +15,7 @@ an ExprC is generally the input to evaluation, which may be one of the following
 abstract type ExprC end
 
 struct numC <: ExprC
-    n::Real
+    n::Float64
 end
 
 struct stringC <: ExprC
@@ -52,7 +54,7 @@ a Value is generally the result of evaluation, which may be one of the following
 abstract type Value end
 
 struct numV <: Value
-    n::Real
+    n::Float64
 end
 
 struct boolV <: Value
@@ -228,6 +230,11 @@ function serialize(v::Value)::String
     end
 end
 
+# parses a given Sexp containing a list of functions, and evaluates it to a value
+function top_interp(s::Any)::String
+    serialize(interp(parsee(s),top_env))
+end
+
 # top_env Tests
 @test typeof(top_env) == Env
 
@@ -238,16 +245,16 @@ end
 @test_throws ErrorException lookup(:garbage, top_env)
 
 # interp Tests
-@test interp(numC(0), top_env) == numV(0)
+@test interp(numC(0.0), top_env) == numV(0.0)
 @test interp(stringC("Hello, world!"), top_env) == stringV("Hello, world!")
 @test interp(idC(Symbol("true")), top_env) == boolV(true)
 @test interp(idC(Symbol("false")), top_env) == boolV(false)
-@test interp(appC(idC(:<=), [numC(1), numC(2)]), top_env) == boolV(true)
-@test interp(appC(idC(:<=), [numC(4), numC(2)]), top_env) == boolV(false)
+@test interp(appC(idC(:<=), [numC(1.0), numC(2.0)]), top_env) == boolV(true)
+@test interp(appC(idC(:<=), [numC(4.0), numC(2.0)]), top_env) == boolV(false)
 @test interp(
-    ifC(appC(idC(:<=), [numC(1), numC(2)]), numC(6), numC(1)),
+    ifC(appC(idC(:<=), [numC(1.0), numC(2.0)]), numC(6.0), numC(1.0)),
     top_env
-) == numV(6)
+) == numV(6.0)
 @test interp(
     ifC(appC(idC(:equal_huh), [idC(Symbol("true")), idC(Symbol("true"))]),
     idC(Symbol("true")), idC(Symbol("false"))),
@@ -269,22 +276,22 @@ end
     top_env
 ) == boolV(false)
 @test interp(
-    ifC(appC(idC(:equal_huh), [numC(1), numC(1)]),
+    ifC(appC(idC(:equal_huh), [numC(1.0), numC(1.0)]),
     idC(Symbol("true")), idC(Symbol("false"))),
     top_env
 ) == boolV(true)
 @test interp(
-    ifC(appC(idC(:equal_huh), [numC(1), numC(2)]),
+    ifC(appC(idC(:equal_huh), [numC(1.0), numC(2.0)]),
     idC(Symbol("true")), idC(Symbol("false"))),
     top_env
 ) == boolV(false)
 @test interp(
-    ifC(appC(idC(:equal_huh), [numC(1), stringC("2")]),
+    ifC(appC(idC(:equal_huh), [numC(1.0), stringC("2")]),
     idC(Symbol("true")), idC(Symbol("false"))),
     top_env
 ) == boolV(false)
 @test interp(
-    ifC(appC(idC(:equal_huh), [idC(Symbol("true")), numC(2)]),
+    ifC(appC(idC(:equal_huh), [idC(Symbol("true")), numC(2.0)]),
     idC(Symbol("true")), idC(Symbol("false"))),
     top_env
 ) == boolV(false)
@@ -293,43 +300,51 @@ end
     idC(Symbol("true")), idC(Symbol("false"))),
     top_env
 ) == boolV(false)
-test_closure_1 = interp(lamC([], numC(0)), top_env)
+test_closure_1 = interp(lamC([], numC(0.0)), top_env)
 @test typeof(test_closure_1) == closV
 @test test_closure_1.args == []
-@test test_closure_1.body == numC(0)
+@test test_closure_1.body == numC(0.0)
 @test test_closure_1.env == top_env
 test_closure_2 = interp(lamC([:x], idC(:x)), top_env)
 @test typeof(test_closure_2) == closV
 @test test_closure_2.args == [:x]
 @test test_closure_2.body == idC(:x)
 @test test_closure_2.env == top_env
-@test interp(appC(idC(:+), [numC(2), numC(1)]), top_env) == numV(3)
-@test interp(appC(idC(:-), [numC(2), numC(1)]), top_env) == numV(1)
-@test interp(appC(idC(:*), [numC(2), numC(1)]), top_env) == numV(2)
-@test interp(appC(idC(:/), [numC(2), numC(1)]), top_env) == numV(2.0)
-@test interp(appC(idC(:<=), [numC(2), numC(1)]), top_env) == boolV(false)
-@test interp(appC(lamC([:x], appC(idC(:+), [numC(1), idC(:x)])), [numC(2)]), top_env) == numV(3)
-fib_prog = appC(lamC([:fib], appC(idC(:equal_huh), [numC(21), appC(idC(:fib), [idC(:fib), numC(8)])])),
-                [lamC([:f, :n], ifC(appC(idC(:<=), [idC(:n), numC(1)]),
+@test interp(appC(idC(:+), [numC(2.0), numC(1.0)]), top_env) == numV(3.0)
+@test interp(appC(idC(:-), [numC(2.0), numC(1.0)]), top_env) == numV(1.0)
+@test interp(appC(idC(:*), [numC(2.0), numC(1.0)]), top_env) == numV(2.0)
+@test interp(appC(idC(:/), [numC(2.0), numC(1.0)]), top_env) == numV(2.0)
+@test interp(appC(idC(:<=), [numC(2.0), numC(1.0)]), top_env) == boolV(false)
+@test interp(appC(lamC([:x], appC(idC(:+), [numC(1.0), idC(:x)])), [numC(2.0)]), top_env) == numV(3.0)
+fib_prog = appC(lamC([:fib], appC(idC(:equal_huh), [numC(21.0), appC(idC(:fib), [idC(:fib), numC(8.0)])])),
+                [lamC([:f, :n], ifC(appC(idC(:<=), [idC(:n), numC(1.0)]),
                                     idC(:n),
-                                    appC(idC(:+), [appC(idC(:f), [idC(:f), appC(idC(:-), [idC(:n), numC(1)])]),
-                                                    appC(idC(:f), [idC(:f), appC(idC(:-), [idC(:n), numC(2)])])])))])
+                                    appC(idC(:+), [appC(idC(:f), [idC(:f), appC(idC(:-), [idC(:n), numC(1.0)])]),
+                                                    appC(idC(:f), [idC(:f), appC(idC(:-), [idC(:n), numC(2.0)])])])))])
 @test interp(fib_prog, top_env) == boolV(true)
-@test_throws ErrorException interp(appC(idC(:+), [numC(1)]), top_env)
-@test_throws ErrorException interp(appC(idC(:/), [numC(1), numC(0)]), top_env)
-@test_throws ErrorException interp(appC(idC(:%), [numC(1), numC(1)]), top_env)
-@test_throws ErrorException interp(appC(idC(Symbol("true")), [numC(1), numC(1)]), top_env)
+@test_throws ErrorException interp(appC(idC(:+), [numC(1.0)]), top_env)
+@test_throws ErrorException interp(appC(idC(:/), [numC(1.0), numC(0.0)]), top_env)
+@test_throws ErrorException interp(appC(idC(:%), [numC(1.0), numC(1.0)]), top_env)
+@test_throws ErrorException interp(appC(idC(Symbol("true")), [numC(1.0), numC(1.0)]), top_env)
 
 # parsee Tests
-@test parsee(1.) == numC(1.0)
+@test parsee(1.0) == numC(1.0)
 @test parsee("hello") == stringC("hello")
 @test parsee(:sym) == idC(:sym)
-@test parsee([:if, Symbol("true"), 1., 0.]) == ifC(idC(Symbol("true")), numC(1.0), numC(0.0))
+@test parsee([:if, Symbol("true"), 1.0, 0.0]) == ifC(idC(Symbol("true")), numC(1.0), numC(0.0))
 
 # serialize Tests
-@test serialize(numV(0)) == "0"
+@test serialize(numV(0.0)) == "0.0"
 @test serialize(boolV(true)) == "true"
 @test serialize(boolV(false)) == "false"
 @test serialize(stringV("Hello, world!")) == "\"Hello, world!\""
 @test serialize(primV(:+)) == "#<primop>"
-@test serialize(closV([:f], idC(:hello), top_env)) =="#<procedure>"
+@test serialize(closV([:f], idC(:hello), top_env)) == "#<procedure>"
+
+# top-interp Tests
+@test top_interp(1.0) == "1.0"
+@test top_interp(Symbol("true")) =="true"
+@test top_interp(Symbol("false")) =="false"
+@test top_interp([:if, Symbol("true"), 1., 0.]) == "1.0"
+@test top_interp([:if, Symbol("false"), 1., 0.]) == "0.0"
+@test top_interp("Hello, world!") == "\"Hello, world!\""
