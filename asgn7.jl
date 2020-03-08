@@ -343,8 +343,8 @@ fib_prog = appC(lamC([:fib], appC(idC(:equal_huh), [numC(21.0), appC(idC(:fib), 
 
 # top-interp Tests
 @test top_interp(1.0) == "1.0"
-@test top_interp(Symbol("true")) =="true"
-@test top_interp(Symbol("false")) =="false"
+@test top_interp(Symbol("true")) == "true"
+@test top_interp(Symbol("false")) == "false"
 @test top_interp([:if, Symbol("true"), 1., 0.]) == "1.0"
 @test top_interp([:if, Symbol("false"), 1., 0.]) == "0.0"
 @test top_interp("Hello, world!") == "\"Hello, world!\""
